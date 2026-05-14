@@ -1,0 +1,50 @@
+# Build artifacts
+build/
+install/
+log/
+
+# macOS
+.DS_Store
+
+# Pico firmware outputs
+*.uf2
+*.elf
+*.bin
+*.hex
+*.map
+*.dis
+
+# IDE
+.vscode/
+
+# Reference / scratch
+CONTEXT/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+.env
+
+# ROS 2 colcon workspace
+colcon.meta
+COLCON_IGNORE
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
