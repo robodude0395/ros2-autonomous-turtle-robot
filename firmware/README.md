@@ -64,9 +64,18 @@ cp md25_microros.uf2 /media/$USER/RPI-RP2  # Linux
 
 ## Run the micro-ROS Agent
 
-The agent must be built from source to ensure DDS type compatibility with your ROS 2 install.
+### Option A: Use the pre-built package (if available for your distro)
 
-### Build the agent (one-time setup on the RPi)
+```bash
+sudo apt install -y ros-${ROS_DISTRO}-micro-ros-agent
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -b 115200
+```
+
+If the apt package isn't available or you hit type-support mismatches, build from source instead (Option B).
+
+### Option B: Build from source (one-time setup on the RPi)
+
+The agent must be built from source to ensure DDS type compatibility with your ROS 2 install.
 
 ```bash
 sudo apt install -y g++ cmake python3-rosdep python3-colcon-common-extensions
