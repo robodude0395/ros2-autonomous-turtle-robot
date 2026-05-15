@@ -1,11 +1,12 @@
 """Launch robot_state_publisher + joint_state_publisher_gui + RViz for URDF visualization."""
 
 import os
+import subprocess
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, Command
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -14,6 +15,11 @@ def generate_launch_description():
     pkg_dir = get_package_share_directory('turtlebot_description')
     xacro_file = os.path.join(pkg_dir, 'urdf', 'turtlebot.urdf.xacro')
     rviz_config = os.path.join(pkg_dir, 'rviz', 'display.rviz')
+
+    # Process xacro at launch time to get the URDF XML string
+    robot_description_content = subprocess.check_output(
+        ['xacro', xacro_file]
+    ).decode('utf-8')
 
     use_gui = LaunchConfiguration('use_gui')
 
@@ -29,10 +35,7 @@ def generate_launch_description():
             package='robot_state_publisher',
             executable='robot_state_publisher',
             parameters=[{
-                'robot_description': ParameterValue(
-                    Command(['xacro ', xacro_file]),
-                    value_type=str
-                )
+                'robot_description': robot_description_content
             }],
             output='screen'
         ),
