@@ -20,7 +20,7 @@
 
   <!-- Kinect sensor -->
   <xacro:property name="kinect_x_offset" value="0.176"/>    <!-- forward from base centre -->
-  <xacro:property name="kinect_z_offset" value="0.176"/>    <!-- height above top plate -->
+  <xacro:property name="kinect_z_offset" value="0.0"/>    <!-- height above top plate -->
 
   <!-- ======================== MATERIALS ======================== -->
   <material name="wood">
