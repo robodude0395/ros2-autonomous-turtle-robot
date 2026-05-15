@@ -7,6 +7,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -28,7 +29,10 @@ def generate_launch_description():
             package='robot_state_publisher',
             executable='robot_state_publisher',
             parameters=[{
-                'robot_description': Command(['xacro ', xacro_file])
+                'robot_description': ParameterValue(
+                    Command(['xacro ', xacro_file]),
+                    value_type=str
+                )
             }],
             output='screen'
         ),
