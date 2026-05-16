@@ -68,25 +68,59 @@ turtlebot_navigation/     Nav2 autonomous navigation (ament_cmake, config-only)
 ### Build firmware
 See [firmware/README.md](firmware/README.md) for build and flash instructions.
 
+### Build ROS 2 packages (on Ubuntu VM)
+```bash
+cd ~/ros2_ws
+colcon build --symlink-install
+source install/setup.bash
+```
+
+Note: `firmware/COLCON_IGNORE` prevents colcon from trying to build the Pico firmware.
+
 ### Map a room
 ```bash
+# Always start clean
+pkill -f "ros2 launch"
+
 # Terminal 1: Start SLAM
 ros2 launch turtlebot_slam slam_mapping.launch.py
 
-# Terminal 2: Drive the robot
+# Terminal 2: Activate slam_toolbox (lifecycle node in Kilted)
+ros2 lifecycle set /slam_toolbox configure
+ros2 lifecycle set /slam_toolbox activate
+
+# Terminal 3: Drive the robot
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Terminal 3: Save the map when done
-ros2 launch turtlebot_slam save_map.launch.py map_name:=my_room
+# Terminal 4: Save the map when done
+mkdir -p ~/maps
+ros2 run nav2_map_server map_saver_cli -f ~/maps/my_room
 ```
 
-### Autonomous navigation
+### Autonomous navigation (SLAM mode — recommended)
 ```bash
-# With a saved map:
-ros2 launch turtlebot_navigation navigation.launch.py map:=~/maps/my_room.yaml
-
-# Or with live SLAM (no map needed):
+pkill -f "ros2 launch"
 ros2 launch turtlebot_navigation slam_navigation.launch.py
+
+# Activate slam_toolbox
+ros2 lifecycle set /slam_toolbox configure
+ros2 lifecycle set /slam_toolbox activate
+
+# Send a goal (or use Nav2 Goal in RViz)
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 0.5, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
 ```
 
-Then click **Nav2 Goal** in RViz to send the robot to a target pose.
+### Autonomous navigation (map-based mode)
+```bash
+pkill -f "ros2 launch"
+ros2 launch turtlebot_navigation navigation.launch.py map:=$HOME/maps/my_room.yaml
+
+# Wait ~10s for auto-initialization, or manually:
+ros2 topic pub /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+  "{header: {frame_id: 'map'}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}" --once
+
+# Then send a goal
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 1.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
+```

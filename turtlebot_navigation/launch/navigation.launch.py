@@ -1,8 +1,8 @@
 """
 Launch Nav2 autonomous navigation with a pre-built map.
 
-This is the "go to goal" mode — give the robot a pose in RViz and it
-navigates there autonomously, avoiding obstacles.
+Classic turtlebot navigation: map + AMCL localization + costmaps + Nav2 goal planning.
+Give the robot a pose in RViz and it navigates there autonomously, avoiding obstacles.
 
 Prerequisites:
   - You have already mapped the room using turtlebot_slam
@@ -10,16 +10,11 @@ Prerequisites:
 
 Usage:
     ros2 launch turtlebot_navigation navigation.launch.py
-    ros2 launch turtlebot_navigation navigation.launch.py map:=/path/to/my_map.yaml
+    ros2 launch turtlebot_navigation navigation.launch.py map:=$HOME/maps/my_room.yaml
 
-After launch, you MUST set the initial pose in RViz (2D Pose Estimate)
-or run:
+After launch (~10s), the map should appear in RViz. If not, publish initial pose:
     ros2 topic pub /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
       "{header: {frame_id: 'map'}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}" --once
-
-Then use Nav2 Goal in RViz or:
-    ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
-      "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 1.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
 """
 
 import os
@@ -141,39 +136,6 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # --- Lifecycle Manager for Localization (map_server + amcl) ---
-        # These must be activated first so map→odom TF exists before Nav2 starts
-        Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager_localization',
-            parameters=[{
-                'use_sim_time': use_sim_time,
-                'autostart': True,
-                'bond_timeout': 0.0,
-                'node_names': [
-                    'map_server',
-                    'amcl',
-                ],
-            }],
-            output='screen'
-        ),
-
-        # --- Publish initial pose after localization nodes are up ---
-        TimerAction(
-            period=8.0,
-            actions=[
-                ExecuteProcess(
-                    cmd=[
-                        'ros2', 'topic', 'pub', '--once', '/initialpose',
-                        'geometry_msgs/msg/PoseWithCovarianceStamped',
-                        '{header: {frame_id: "map"}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}'
-                    ],
-                    output='screen'
-                ),
-            ]
-        ),
-
         # --- Nav2 Controller Server ---
         Node(
             package='nav2_controller',
@@ -220,7 +182,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # --- Nav2 Lifecycle Manager for Navigation ---
+        # --- Lifecycle Manager: ALL Nav2 nodes ---
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
@@ -230,6 +192,8 @@ def generate_launch_description():
                 'autostart': True,
                 'bond_timeout': 0.0,
                 'node_names': [
+                    'map_server',
+                    'amcl',
                     'controller_server',
                     'planner_server',
                     'behavior_server',
@@ -238,6 +202,22 @@ def generate_launch_description():
                 ],
             }],
             output='screen'
+        ),
+
+        # --- Publish initial pose at 10s (AMCL needs this to start map→odom TF) ---
+        TimerAction(
+            period=10.0,
+            actions=[
+                ExecuteProcess(
+                    cmd=[
+                        'ros2', 'topic', 'pub', '/initialpose',
+                        'geometry_msgs/msg/PoseWithCovarianceStamped',
+                        '{header: {frame_id: "map"}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}',
+                        '--times', '5',
+                    ],
+                    output='screen'
+                ),
+            ]
         ),
 
         # --- RViz ---
