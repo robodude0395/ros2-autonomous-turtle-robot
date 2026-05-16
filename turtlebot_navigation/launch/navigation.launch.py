@@ -11,6 +11,15 @@ Prerequisites:
 Usage:
     ros2 launch turtlebot_navigation navigation.launch.py
     ros2 launch turtlebot_navigation navigation.launch.py map:=/path/to/my_map.yaml
+
+After launch, you MUST set the initial pose in RViz (2D Pose Estimate)
+or run:
+    ros2 topic pub /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+      "{header: {frame_id: 'map'}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}" --once
+
+Then use Nav2 Goal in RViz or:
+    ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+      "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 1.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
 """
 
 import os
@@ -128,12 +137,41 @@ def generate_launch_description():
             name='amcl',
             parameters=[nav2_params, {
                 'use_sim_time': use_sim_time,
-                'set_initial_pose': True,
-                'initial_pose_x': 0.0,
-                'initial_pose_y': 0.0,
-                'initial_pose_yaw': 0.0,
             }],
             output='screen'
+        ),
+
+        # --- Lifecycle Manager for Localization (map_server + amcl) ---
+        # These must be activated first so map→odom TF exists before Nav2 starts
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_localization',
+            parameters=[{
+                'use_sim_time': use_sim_time,
+                'autostart': True,
+                'bond_timeout': 0.0,
+                'node_names': [
+                    'map_server',
+                    'amcl',
+                ],
+            }],
+            output='screen'
+        ),
+
+        # --- Publish initial pose after localization nodes are up ---
+        TimerAction(
+            period=8.0,
+            actions=[
+                ExecuteProcess(
+                    cmd=[
+                        'ros2', 'topic', 'pub', '--once', '/initialpose',
+                        'geometry_msgs/msg/PoseWithCovarianceStamped',
+                        '{header: {frame_id: "map"}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}'
+                    ],
+                    output='screen'
+                ),
+            ]
         ),
 
         # --- Nav2 Controller Server ---
@@ -182,7 +220,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # --- Nav2 Lifecycle Manager ---
+        # --- Nav2 Lifecycle Manager for Navigation ---
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
@@ -192,8 +230,6 @@ def generate_launch_description():
                 'autostart': True,
                 'bond_timeout': 0.0,
                 'node_names': [
-                    'map_server',
-                    'amcl',
                     'controller_server',
                     'planner_server',
                     'behavior_server',
@@ -211,21 +247,5 @@ def generate_launch_description():
             arguments=['-d', rviz_config],
             parameters=[{'use_sim_time': use_sim_time}],
             output='screen'
-        ),
-
-        # --- Auto-publish initial pose for AMCL after 5s ---
-        # AMCL won't publish map→odom until it receives an initial pose.
-        TimerAction(
-            period=5.0,
-            actions=[
-                ExecuteProcess(
-                    cmd=[
-                        'ros2', 'topic', 'pub', '--once', '/initialpose',
-                        'geometry_msgs/msg/PoseWithCovarianceStamped',
-                        '{header: {frame_id: "map"}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}'
-                    ],
-                    output='screen'
-                ),
-            ]
         ),
     ])
