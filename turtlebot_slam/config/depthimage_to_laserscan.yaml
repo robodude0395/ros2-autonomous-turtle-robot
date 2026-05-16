@@ -3,8 +3,8 @@
 
 depthimage_to_laserscan_node:
   ros__parameters:
-    # Frame for the output LaserScan
-    output_frame_id: kinect_depth_frame
+    # Frame for the output LaserScan (must match the frame published by the Kinect driver)
+    output_frame_id: camera_depth_frame
 
     # How many rows of the depth image to use (centred vertically)
     # Higher = more robust but slower. 100 is a good balance for Kinect.

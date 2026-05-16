@@ -102,6 +102,7 @@ def generate_launch_description():
         ),
 
         # --- SLAM Toolbox (Online Async) ---
+        # slam_toolbox is a lifecycle node in Kilted — needs lifecycle manager
         Node(
             package='slam_toolbox',
             executable='async_slam_toolbox_node',
@@ -110,6 +111,19 @@ def generate_launch_description():
                 slam_params,
                 {'use_sim_time': use_sim_time},
             ],
+            output='screen'
+        ),
+
+        # --- Lifecycle Manager for SLAM Toolbox ---
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_slam',
+            parameters=[{
+                'use_sim_time': use_sim_time,
+                'autostart': True,
+                'node_names': ['slam_toolbox'],
+            }],
             output='screen'
         ),
 
