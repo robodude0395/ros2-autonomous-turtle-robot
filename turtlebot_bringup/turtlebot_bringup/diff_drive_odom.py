@@ -9,8 +9,8 @@ Subscribes:
     /wheel/left/encoder  (std_msgs/Int32)
     /wheel/right/encoder (std_msgs/Int32)
 
-This is the critical bridge between the firmware encoder data and
-the navigation stack (SLAM + Nav2 both require odom).
+Uses a fixed-rate timer to sample both encoders simultaneously,
+avoiding phantom rotations from unsynchronized left/right callbacks.
 """
 
 import math
@@ -44,6 +44,8 @@ class DiffDriveOdom(Node):
         self.declare_parameter('odom_frame', 'odom')
         self.declare_parameter('base_frame', 'base_link')
         self.declare_parameter('publish_tf', True)
+        self.declare_parameter('publish_rate', 10.0)         # Hz
+        self.declare_parameter('tick_deadband', 2)            # ignore changes <= this many ticks
 
         self.ticks_per_rev = self.get_parameter('ticks_per_revolution').value
         self.wheel_radius = self.get_parameter('wheel_radius').value
@@ -51,6 +53,8 @@ class DiffDriveOdom(Node):
         self.odom_frame = self.get_parameter('odom_frame').value
         self.base_frame = self.get_parameter('base_frame').value
         self.publish_tf = self.get_parameter('publish_tf').value
+        publish_rate = self.get_parameter('publish_rate').value
+        self.tick_deadband = self.get_parameter('tick_deadband').value
 
         # Derived
         self.metres_per_tick = (2.0 * math.pi * self.wheel_radius) / self.ticks_per_rev
@@ -63,9 +67,11 @@ class DiffDriveOdom(Node):
         self.right_ticks = 0
         self.prev_left_ticks = None
         self.prev_right_ticks = None
-        self.last_time = self.get_clock().now()
+        self.last_time = None
+        self.left_received = False
+        self.right_received = False
 
-        # Subscribers
+        # Subscribers — just store the latest value
         self.create_subscription(Int32, 'wheel/left/encoder', self._left_cb, 10)
         self.create_subscription(Int32, 'wheel/right/encoder', self._right_cb, 10)
 
@@ -75,33 +81,56 @@ class DiffDriveOdom(Node):
         # TF broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
+        # Fixed-rate timer — samples both encoders together
+        timer_period = 1.0 / publish_rate
+        self.create_timer(timer_period, self._update_odom)
+
         self.get_logger().info(
             f'DiffDriveOdom started: wheel_radius={self.wheel_radius}m, '
-            f'wheel_sep={self.wheel_separation}m, ticks/rev={self.ticks_per_rev}'
+            f'wheel_sep={self.wheel_separation}m, ticks/rev={self.ticks_per_rev}, '
+            f'rate={publish_rate}Hz'
         )
 
     def _left_cb(self, msg: Int32):
         self.left_ticks = msg.data
-        self._update_odom()
+        self.left_received = True
 
     def _right_cb(self, msg: Int32):
         self.right_ticks = msg.data
-        self._update_odom()
+        self.right_received = True
 
     def _update_odom(self):
-        # Skip until we have a baseline for both wheels
+        # Wait until we've received at least one message from each encoder
+        if not self.left_received or not self.right_received:
+            return
+
+        now = self.get_clock().now()
+
+        # Initialize baseline on first run
         if self.prev_left_ticks is None:
             self.prev_left_ticks = self.left_ticks
             self.prev_right_ticks = self.right_ticks
-            self.last_time = self.get_clock().now()
+            self.last_time = now
             return
 
-        # Compute deltas
-        dl = (self.left_ticks - self.prev_left_ticks) * self.metres_per_tick
-        dr = (self.right_ticks - self.prev_right_ticks) * self.metres_per_tick
+        # Compute deltas (snapshot both at the same instant)
+        left_ticks = self.left_ticks
+        right_ticks = self.right_ticks
 
-        self.prev_left_ticks = self.left_ticks
-        self.prev_right_ticks = self.right_ticks
+        delta_left = left_ticks - self.prev_left_ticks
+        delta_right = right_ticks - self.prev_right_ticks
+
+        # Deadband: ignore tiny fluctuations (encoder noise)
+        if abs(delta_left) <= self.tick_deadband and abs(delta_right) <= self.tick_deadband:
+            # Still publish odom at current pose (for TF continuity) but with zero velocity
+            self._publish(now, 0.0, 0.0)
+            return
+
+        dl = delta_left * self.metres_per_tick
+        dr = delta_right * self.metres_per_tick
+
+        self.prev_left_ticks = left_ticks
+        self.prev_right_ticks = right_ticks
 
         # Differential drive kinematics
         d_centre = (dl + dr) / 2.0
@@ -113,13 +142,16 @@ class DiffDriveOdom(Node):
         self.theta += d_theta
 
         # Time delta for velocity
-        now = self.get_clock().now()
         dt = (now - self.last_time).nanoseconds / 1e9
         self.last_time = now
 
         vx = d_centre / dt if dt > 0 else 0.0
         vth = d_theta / dt if dt > 0 else 0.0
 
+        self._publish(now, vx, vth)
+
+    def _publish(self, now, vx, vth):
+        """Publish odometry message and TF."""
         # Publish Odometry message
         odom = Odometry()
         odom.header.stamp = now.to_msg()
