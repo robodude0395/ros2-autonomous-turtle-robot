@@ -7,8 +7,9 @@ depthimage_to_laserscan_node:
     output_frame_id: camera_depth_frame
 
     # How many rows of the depth image to use (centred vertically)
-    # Higher = more robust but slower. 100 is a good balance for Kinect.
-    scan_height: 100
+    # Lower = less floor/ceiling noise. Kinect has 480 rows.
+    # 10 rows gives a tight horizontal slice — best for indoor SLAM.
+    scan_height: 10
 
     # Range limits (metres) — Kinect 360 specs
     range_min: 0.45
