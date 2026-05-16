@@ -37,7 +37,7 @@ def generate_launch_description():
             cmd=[
                 'ros2', 'run', 'nav2_map_server', 'map_saver_cli',
                 '-f', [maps_dir, '/', map_name],
-                '--ros-args', '-p', 'save_map_timeout:=5000',
+                '--ros-args', '-p', 'save_map_timeout:=5000.0',
             ],
             output='screen'
         ),
