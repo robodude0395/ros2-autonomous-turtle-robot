@@ -17,10 +17,10 @@ import os
 import subprocess
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -34,7 +34,7 @@ def generate_launch_description():
     nav2_params = os.path.join(nav_pkg, 'config', 'nav2_params.yaml')
     depth2scan_params = os.path.join(slam_pkg, 'config', 'depthimage_to_laserscan.yaml')
     rviz_config = os.path.join(nav_pkg, 'rviz', 'navigation.rviz')
-    default_map = os.path.join(os.path.expanduser('~'), 'maps', 'my_map.yaml')
+    default_map = os.path.join(os.path.expanduser('~'), 'maps', 'my_room.yaml')
 
     # Process URDF
     robot_description_content = subprocess.check_output(
@@ -113,8 +113,10 @@ def generate_launch_description():
             executable='map_server',
             name='map_server',
             parameters=[{
-                'yaml_filename': map_file,
+                'yaml_filename': ParameterValue(map_file, value_type=str),
                 'use_sim_time': use_sim_time,
+                'topic_name': 'map',
+                'frame_id': 'map',
             }],
             output='screen'
         ),
@@ -124,7 +126,13 @@ def generate_launch_description():
             package='nav2_amcl',
             executable='amcl',
             name='amcl',
-            parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            parameters=[nav2_params, {
+                'use_sim_time': use_sim_time,
+                'set_initial_pose': True,
+                'initial_pose_x': 0.0,
+                'initial_pose_y': 0.0,
+                'initial_pose_yaw': 0.0,
+            }],
             output='screen'
         ),
 
@@ -182,6 +190,7 @@ def generate_launch_description():
             parameters=[{
                 'use_sim_time': use_sim_time,
                 'autostart': True,
+                'bond_timeout': 0.0,
                 'node_names': [
                     'map_server',
                     'amcl',

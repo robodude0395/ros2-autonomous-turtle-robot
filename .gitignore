@@ -36,7 +36,6 @@ env/
 
 # ROS 2 colcon workspace
 colcon.meta
-COLCON_IGNORE
 
 # pytest / coverage
 .pytest_cache/

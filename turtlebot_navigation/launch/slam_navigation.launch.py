@@ -108,6 +108,20 @@ def generate_launch_description():
             output='screen'
         ),
 
+        # --- Lifecycle Manager for SLAM ---
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_slam',
+            parameters=[{
+                'use_sim_time': use_sim_time,
+                'autostart': True,
+                'bond_timeout': 0.0,
+                'node_names': ['slam_toolbox'],
+            }],
+            output='screen'
+        ),
+
         # --- Nav2 Controller Server ---
         Node(
             package='nav2_controller',
@@ -162,6 +176,7 @@ def generate_launch_description():
             parameters=[{
                 'use_sim_time': use_sim_time,
                 'autostart': True,
+                'bond_timeout': 0.0,
                 'node_names': [
                     'controller_server',
                     'planner_server',
