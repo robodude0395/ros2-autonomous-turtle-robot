@@ -13,8 +13,8 @@ slam_toolbox:
 
     # Map parameters
     resolution: 0.05                # 5cm per cell — good for indoor rooms
-    max_laser_range: 8.0            # Kinect max useful range
-    minimum_time_interval: 0.5
+    max_laser_range: 4.0            # Reduced from 8m — Kinect is noisy beyond 4m
+    minimum_time_interval: 1.0      # Only process scans every 1s (was 0.5)
     transform_timeout: 0.2
     tf_buffer_duration: 30.0
     stack_size_to_use: 40000000
@@ -26,7 +26,7 @@ slam_toolbox:
     minimum_travel_heading: 0.5     # radians before adding a new node
     scan_buffer_size: 10
     scan_buffer_maximum_scan_distance: 10.0
-    link_match_minimum_response_fine: 0.3
+    link_match_minimum_response_fine: 0.5
     link_scan_maximum_distance: 1.5
     loop_search_maximum_distance: 3.0
     do_loop_closing: true
@@ -35,10 +35,10 @@ slam_toolbox:
     loop_match_minimum_response_coarse: 0.35
     loop_match_minimum_response_fine: 0.45
 
-    # Correlation parameters (scan matcher internals)
-    correlation_search_space_dimension: 0.5
+    # Correlation parameters — tighter search space to prevent wild jumps
+    correlation_search_space_dimension: 0.3
     correlation_search_space_resolution: 0.01
-    correlation_search_space_smear_deviation: 0.1
+    correlation_search_space_smear_deviation: 0.03
 
     # Loop closure parameters
     loop_search_space_dimension: 8.0
