@@ -22,7 +22,7 @@ slam_toolbox:
     # Scan matching
     use_scan_matching: true
     use_scan_barycenter: true
-    minimum_travel_distance: 0.05   # metres before adding a new node (nearly zero — rotation alone triggers)
+    minimum_travel_distance: 0.0    # disabled — rotation alone can trigger new nodes
     minimum_travel_heading: 0.15    # ~8.5 degrees — gives ~42 nodes per full rotation
     scan_buffer_size: 10
     scan_buffer_maximum_scan_distance: 10.0
