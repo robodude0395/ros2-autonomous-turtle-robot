@@ -1,0 +1,18 @@
+# depthimage_to_laserscan parameters
+# Converts Kinect 360 depth image into a 2D LaserScan for SLAM
+
+depthimage_to_laserscan_node:
+  ros__parameters:
+    # Frame for the output LaserScan
+    output_frame_id: kinect_depth_frame
+
+    # How many rows of the depth image to use (centred vertically)
+    # Higher = more robust but slower. 100 is a good balance for Kinect.
+    scan_height: 100
+
+    # Range limits (metres) — Kinect 360 specs
+    range_min: 0.45
+    range_max: 8.0
+
+    # Scan time (approximate, for interpolation)
+    scan_time: 0.033

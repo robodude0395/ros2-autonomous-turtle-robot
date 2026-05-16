@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'encoder_to_joint_states = turtlebot_bringup.encoder_to_joint_states:main',
+            'diff_drive_odom = turtlebot_bringup.diff_drive_odom:main',
         ],
     },
 )

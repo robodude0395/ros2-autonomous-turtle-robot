@@ -1,0 +1,72 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+Visualization Manager:
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Value: true
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Value: true
+      Description Topic:
+        Value: /robot_description
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Value: true
+    - Class: rviz_default_plugins/Map
+      Name: Global Map
+      Value: true
+      Topic:
+        Value: /map
+    - Class: rviz_default_plugins/Map
+      Name: Local Costmap
+      Value: true
+      Topic:
+        Value: /local_costmap/costmap
+      Color Scheme: costmap
+    - Class: rviz_default_plugins/Map
+      Name: Global Costmap
+      Value: false
+      Topic:
+        Value: /global_costmap/costmap
+      Color Scheme: costmap
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Value: true
+      Topic:
+        Value: /scan
+      Size (m): 0.03
+    - Class: rviz_default_plugins/Path
+      Name: Global Plan
+      Value: true
+      Topic:
+        Value: /plan
+    - Class: rviz_default_plugins/Path
+      Name: Local Plan
+      Value: true
+      Topic:
+        Value: /local_plan
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry
+      Value: false
+      Topic:
+        Value: /odom
+      Keep: 50
+  Global Options:
+    Fixed Frame: map
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal_pose
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: TopDownOrtho
+      Scale: 50

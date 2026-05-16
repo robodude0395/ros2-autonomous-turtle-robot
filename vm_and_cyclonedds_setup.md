@@ -105,6 +105,7 @@ Create `~/cyclonedds.xml`:
     <Discovery>
       <Peers>
         <Peer address="RASPBERRY_PI_IP"/>
+        <Peer address="localhost"/>
       </Peers>
     </Discovery>
   </Domain>
@@ -124,11 +125,14 @@ Create `~/cyclonedds.xml`:
     <Discovery>
       <Peers>
         <Peer address="VM_IP"/>
+        <Peer address="localhost"/>
       </Peers>
     </Discovery>
   </Domain>
 </CycloneDDS>
 ```
+
+**Important:** The `localhost` peer is required on both machines. Without it, nodes running on the same machine cannot discover each other when multicast is disabled (e.g., the Kinect driver won't be visible to `depthimage_to_laserscan` on the Pi).
 
 ### Set environment variables (both machines)
 
@@ -174,7 +178,8 @@ rviz2
 |---------|-----|
 | `librmw_cyclonedds_cpp.so: cannot open shared object` | Install the package: `sudo apt install ros-kilted-rmw-cyclonedds-cpp` |
 | VM and Pi can't ping each other | Switch VM network to Bridged mode (see step 2) |
-| `ros2 topic list` doesn't show topics from the other machine | Check both machines have matching `cyclonedds.xml` with correct IPs and `RMW_IMPLEMENTATION` is set |
+| `ros2 topic list` doesn't show topics from the other machine | Check both machines have matching `cyclonedds.xml` with correct IPs, `localhost` in peers, and `RMW_IMPLEMENTATION` is set |
+| Nodes on the same machine can't see each other | Add `<Peer address="localhost"/>` to `cyclonedds.xml` |
 | RViz black screen / crash | Set `export LIBGL_ALWAYS_SOFTWARE=1` before launching |
 | VM gets IP on wrong subnet (e.g., `192.168.64.x`) | VM is still on Shared/NAT networking — switch to Bridged |
 

@@ -162,7 +162,6 @@ sudo apt install -y ros-kilted-depthimage-to-laserscan
 Run it:
 
 ```bash
-# Kill the current depthimage_to_laserscan on the Pi, then restart with:
 ros2 run depthimage_to_laserscan depthimage_to_laserscan_node \
   --ros-args \
   --remap depth:=/depth/image_raw \
@@ -202,6 +201,13 @@ echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
 | `cv_bridge/cv_bridge.h: No such file` | Run the sed fix in step 3 |
 | No depth data | Check `lsusb` shows all 3 Kinect devices (Motor, Audio, Camera) |
 | Deprecation warnings during build | Harmless — the driver uses older CMake patterns |
+| Kinect topics not visible (`ros2 node info` can't find node) | Add `localhost` to the peers list in `~/cyclonedds.xml` on the Pi (required when multicast is disabled) |
+| LaserScan shows 0 points in RViz despite valid data | The scan's `frame_id` (`camera_depth_frame`) must exist in the URDF TF tree — see note below |
+| Scan points shoot sideways instead of forward | `camera_depth_frame` must be parented to `kinect_link` with identity transform (no rotation), not to `kinect_depth_frame` |
+
+**Important: frame_id alignment**
+
+The `depthimage_to_laserscan` node publishes scans with `frame_id: camera_depth_frame` (inherited from the Kinect driver's depth camera_info). The URDF must include a `camera_depth_frame` link. It should be a direct child of `kinect_link` with zero offset/rotation — this ensures the scan fans out in front of the robot correctly.
 
 ---
 
