@@ -142,7 +142,6 @@ def generate_launch_description():
             executable='controller_server',
             parameters=[nav2_params, {
                 'use_sim_time': use_sim_time,
-                'enable_stamped_cmd_vel': False,
             }],
             output='screen'
         ),
@@ -162,8 +161,10 @@ def generate_launch_description():
             name='behavior_server',
             parameters=[nav2_params, {
                 'use_sim_time': use_sim_time,
-                'enable_stamped_cmd_vel': False,
             }],
+            remappings=[
+                ('cmd_vel', 'cmd_vel_stamped'),
+            ],
             output='screen'
         ),
 
@@ -176,18 +177,30 @@ def generate_launch_description():
         ),
 
         # --- Nav2 Velocity Smoother ---
+        # Output goes to cmd_vel_stamped; the relay node below converts to Twist
         Node(
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
             name='velocity_smoother',
             parameters=[nav2_params, {
                 'use_sim_time': use_sim_time,
-                'enable_stamped_cmd_vel': False,
             }],
             remappings=[
                 ('cmd_vel', 'cmd_vel_nav'),
-                ('cmd_vel_smoothed', 'cmd_vel'),
+                ('cmd_vel_smoothed', 'cmd_vel_stamped'),
             ],
+            output='screen'
+        ),
+
+        # --- TwistStamped → Twist relay ---
+        # Nav2 Kilted publishes TwistStamped; micro-ROS firmware expects Twist
+        Node(
+            package='turtlebot_bringup',
+            executable='twist_relay',
+            parameters=[{
+                'input_topic': '/cmd_vel_stamped',
+                'output_topic': '/cmd_vel',
+            }],
             output='screen'
         ),
 
