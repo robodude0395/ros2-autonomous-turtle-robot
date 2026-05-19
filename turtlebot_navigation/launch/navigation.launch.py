@@ -137,10 +137,12 @@ def generate_launch_description():
         ),
 
         # --- Nav2 Controller Server ---
+        # Remap cmd_vel → cmd_vel_stamped so it goes through the twist relay
         Node(
             package='nav2_controller',
             executable='controller_server',
             parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            remappings=[('cmd_vel', 'cmd_vel_stamped')],
             output='screen'
         ),
 
@@ -172,16 +174,16 @@ def generate_launch_description():
         ),
 
         # --- Nav2 Velocity Smoother ---
-        # Reads TwistStamped from controller on cmd_vel_nav,
-        # outputs TwistStamped to cmd_vel_stamped (for the relay node)
+        # Reads TwistStamped from controller on cmd_vel_stamped,
+        # outputs smoothed TwistStamped to cmd_vel_smoothed (for the relay node)
         Node(
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
             name='velocity_smoother',
             parameters=[nav2_params, {'use_sim_time': use_sim_time}],
             remappings=[
-                ('cmd_vel', 'cmd_vel_nav'),
-                ('cmd_vel_smoothed', 'cmd_vel_stamped'),
+                ('cmd_vel', 'cmd_vel_stamped'),
+                ('cmd_vel_smoothed', 'cmd_vel_smoothed'),
             ],
             output='screen'
         ),
@@ -193,7 +195,7 @@ def generate_launch_description():
             package='turtlebot_bringup',
             executable='twist_relay',
             parameters=[{
-                'input_topic': '/cmd_vel_stamped',
+                'input_topic': '/cmd_vel_smoothed',
                 'output_topic': '/cmd_vel',
             }],
             output='screen'
