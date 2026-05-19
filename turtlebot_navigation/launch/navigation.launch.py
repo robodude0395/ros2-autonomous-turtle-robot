@@ -21,7 +21,7 @@ import os
 import subprocess
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterValue
@@ -221,22 +221,6 @@ def generate_launch_description():
                 ],
             }],
             output='screen'
-        ),
-
-        # --- Publish initial pose at 10s (AMCL needs this to start map→odom TF) ---
-        TimerAction(
-            period=10.0,
-            actions=[
-                ExecuteProcess(
-                    cmd=[
-                        'ros2', 'topic', 'pub', '/initialpose',
-                        'geometry_msgs/msg/PoseWithCovarianceStamped',
-                        '{header: {frame_id: "map"}, pose: {pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}',
-                        '--times', '5',
-                    ],
-                    output='screen'
-                ),
-            ]
         ),
 
         # --- RViz ---
