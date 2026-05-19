@@ -68,11 +68,15 @@ turtlebot_navigation/     Nav2 autonomous navigation (ament_cmake, config-only)
 ### Build firmware
 See [firmware/README.md](firmware/README.md) for build and flash instructions.
 
-### Build ROS 2 packages (on Ubuntu VM)
+### Pull and rebuild ROS 2 packages (on Ubuntu VM)
 ```bash
+cd ~/ros2_ws/src/ros2-autonomous-turtle-robot
+git pull
+
 cd ~/ros2_ws
 colcon build --symlink-install
 source install/setup.bash
+```
 ```
 
 Note: `firmware/COLCON_IGNORE` prevents colcon from trying to build the Pico firmware.
