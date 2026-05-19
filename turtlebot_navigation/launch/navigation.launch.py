@@ -140,7 +140,10 @@ def generate_launch_description():
         Node(
             package='nav2_controller',
             executable='controller_server',
-            parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            parameters=[nav2_params, {
+                'use_sim_time': use_sim_time,
+                'enable_stamped_cmd_vel': False,
+            }],
             output='screen'
         ),
 
@@ -157,7 +160,10 @@ def generate_launch_description():
             package='nav2_behaviors',
             executable='behavior_server',
             name='behavior_server',
-            parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            parameters=[nav2_params, {
+                'use_sim_time': use_sim_time,
+                'enable_stamped_cmd_vel': False,
+            }],
             output='screen'
         ),
 
@@ -174,7 +180,10 @@ def generate_launch_description():
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
             name='velocity_smoother',
-            parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            parameters=[nav2_params, {
+                'use_sim_time': use_sim_time,
+                'enable_stamped_cmd_vel': False,
+            }],
             remappings=[
                 ('cmd_vel', 'cmd_vel_nav'),
                 ('cmd_vel_smoothed', 'cmd_vel'),
