@@ -188,3 +188,4 @@ rviz2
 - If your router assigns dynamic IPs, the addresses in `cyclonedds.xml` may need updating after a reboot. Consider setting static IPs or using mDNS hostnames (e.g., `pi.local`).
 - UTM supports shared folders between Mac and VM — useful for editing code on the Mac and building in the VM.
 - Both machines must use the same `ROS_DOMAIN_ID` (defaults to 0 if unset).
+- **Clock sync is critical.** VMs drift significantly. If TF drops messages or costmaps don't populate, check `date -u` on both machines. Enable NTP (`sudo timedatectl set-ntp true`) or manually sync before launching Nav2.

@@ -74,15 +74,22 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 ## How It Works
 
 ```
-Kinect depth → LaserScan → Costmaps → Planner → Controller → cmd_vel → Motors
-                              ↑
-                         Map (SLAM or static)
+Kinect depth → LaserScan → Costmaps → Planner → Controller → cmd_vel_stamped
+                              ↑                                      ↓
+                         Map (SLAM or static)              Velocity Smoother
+                                                                     ↓
+                                                              cmd_vel_smoothed
+                                                                     ↓
+                                                          Twist Relay (stamped → plain)
+                                                                     ↓
+                                                              /cmd_vel (Twist) → Motors
 ```
 
 - **Global planner** (NavFn): Plans the shortest path on the global costmap
 - **Local controller** (DWB): Follows the path while avoiding dynamic obstacles
 - **Recovery behaviors**: Spin, backup, wait — triggered when the robot gets stuck
 - **Velocity smoother**: Smooths cmd_vel to prevent jerky motor commands
+- **Twist relay**: Converts `TwistStamped` → `Twist` for micro-ROS firmware compatibility (see below)
 
 ## Parameters
 
@@ -132,3 +139,28 @@ This is required because `map_server` publishes with transient local QoS. The in
 
 ### Don't run teleop simultaneously with Nav2
 The velocity smoother remaps `cmd_vel` — running teleop will conflict with Nav2's velocity commands.
+
+### Nav2 Kilted TwistStamped compatibility
+
+Nav2 in ROS 2 Kilted defaults to publishing `geometry_msgs/msg/TwistStamped` on `cmd_vel`. The micro-ROS firmware on the Pico expects plain `geometry_msgs/msg/Twist`. The `enable_stamped_cmd_vel` parameter is read-only and cannot be changed at runtime or via config files.
+
+**Solution:** All Nav2 nodes that publish velocity commands (`controller_server`, `behavior_server`) are remapped to publish on `cmd_vel_stamped`. The velocity smoother reads from there and outputs to `cmd_vel_smoothed`. A `twist_relay` node (in `turtlebot_bringup`) strips the header and republishes as plain `Twist` on `/cmd_vel`.
+
+If you see both `Twist` and `TwistStamped` types on `/cmd_vel`, a node is publishing directly without going through the relay. Check with:
+```bash
+ros2 topic info /cmd_vel --verbose 2>/dev/null | grep "Node name"
+```
+
+### Clock skew between VM and Pi
+
+If TF reports "timestamp earlier than all data in the transform cache" or "frame does not exist" despite everything being launched, the clocks are out of sync. Check with:
+```bash
+# Run on both machines
+date -u
+```
+
+Fix by enabling NTP on both (`sudo timedatectl set-ntp true`) or manually syncing:
+```bash
+# On the VM
+sudo date -s "$(ssh pi@<PI_IP> 'date')"
+```
